@@ -1,0 +1,413 @@
+---
+title: "Russian military losses in Ukraine"
+output: github_document
+date: "December 2022"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(geofacet)
+library(DescTools)
+library(Hmisc)
+library(ggpubr)
+library(lubridate)
+
+options(tibble.width = Inf)
+
+df <- read_csv("dfCasualties.csv")
+```
+
+## Casualties over time
+
+```{r}
+
+df |>
+  filter(deathConfirmedDate < dmy("2.12.2022")) |>
+  ggplot(aes(x = deathConfirmedDate)) +
+  geom_histogram(bins = 50) +
+  xlab("Date when death was confirmed")
+
+```
+
+
+## Number of men killed and mortality rate per capita by region
+
+```{r}
+
+# Read the 2021 census data.
+
+census2021 <- read_csv("census2021_nMen16-615.csv")
+
+# This file has a variable nMen16_615_2021: the number of men in the working age (16-61.5) by region
+# as per census 2021 (2020).
+
+# Number of men killed by region and mortality rate per 100,000 men aged 16-61.5
+
+table_mortRates <- df |>
+  filter(!is.na(region)) |>
+  count(region) |>
+  # join with the census data
+  left_join(census2021, by = c("region" = "regNameEng")) |>
+  # calculate mortality rate per 100,000 men, with confidence intervals
+  mutate(mortalityRate = map2(n, nMen16_615_2021, ~ prop.test(.x, .y, conf.level=0.95) |>
+                                     broom::tidy())) |>
+  unnest(mortalityRate) |>
+  mutate(mortalityRate = estimate * 100000) |>
+  mutate(mortalityRate_lowCI = conf.low * 100000) |>
+  mutate(mortalityRate_highCI = conf.high * 100000) |>
+  arrange(-mortalityRate) |>
+  select(region, regNameISO, n, nMen16_615_2021, mortalityRate, mortalityRate_lowCI, mortalityRate_highCI) 
+
+table_mortRates |>
+  print(n = Inf)
+```
+
+## Map of mortality rates by region
+
+```{r}
+# This sets a grid for a map.
+
+ru_federal_subjects_2022 <- data.frame(
+  row = c(1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 
+          4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 
+          5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 8, 
+          8, 8, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11),
+  col = c(1, 5, 17, 18, 4, 10, 1, 11, 16, 17, 3, 4, 5, 9, 10, 14, 11, 12, 8, 9,  
+          10, 16, 17, 19, 1, 3, 13, 14, 15, 4, 5, 6, 7, 11, 12, 7, 8, 9, 10, 16,
+          13, 14, 15, 3, 4, 5, 6, 11, 7, 8, 9, 10, 17, 12, 13, 14, 15, 3, 4, 5, 
+          6, 7, 8, 9, 14, 4, 5, 6, 5, 6, 7, 2, 4, 5, 6, 7, 8, 1, 5, 6, 7, 8, 5, 6, 7),
+  code = c("SPE", "MUR", "CHU", "KAM", "KR", "NEN", "MOW", "YAN", "SA", 
+           "MAG", "LEN", "NGR", "VLG", "ARK", "KO", "KYA", "KHM", "TYU", 
+           "ME", "KIR", "PER", "AMU", "KHA", "SAK", "KGD", "PSK", "TOM", 
+           "KEM", "IRK", "TVE", "YAR", "IVA", "KOS", "SVE", "KGN", "NIZ", 
+           "CU", "TA", "UD", "YEV", "NVS", "KK", "BU", "SMO", "KLU", 
+           "MOS", "VLA", "CHE", "MO", "ULY", "SAM", "BA", "PRI", "OMS", 
+           "ALT", "TY", "ZAB", "BRY", "ORL", "TUL", "RYA", "PNZ", "SAR", 
+           "ORE", "AL", "KRS", "LIP", "TAM", "BEL", "VOR", "VGG", "UA-43", 
+           "AD", "KDA", "ROS", "KL", "AST",  "UA-40" ,"KC", "STA", "CE", "DA", 
+           "KB", "SE", "IN"),
+  name = c("St.Petersburg", "Murmansk", "Chukotka", 
+           "Kamchatka", "Karelia", "Nenets", 
+           "Moscow", "Yamalo-Nenets", "Sakha", 
+           "Magadan", "Leningrad", "Novgorod", 
+           "Vologda", "Arkhangelsk", "Komi", 
+           "Krasnoyarsk", "Khanty-Mansi", 
+           "Tyumen", "Mari El", "Kirov", 
+           "Perm", "Amur", "Khabarovsk", 
+           "Sakhalin", "Kaliningrad", "Pskov", 
+           "Tomsk", "Kemerovo", "Irkutsk", 
+           "Tver", "Yaroslavl", "Ivanovo", 
+           "Kostroma", "Sverdlovsk", "Kurgan", 
+           "Nizhny Novgorod", "Chuvashia", "Tatarstan", 
+           "Udmurtia", "Yevreyskaya", 
+           "Novosibirsk", "Khakassia", "Buryatia", 
+           "Smolensk", "Kaluga", "Moscow Oblast", 
+           "Vladimir", "Chelyabinsk", "Mordovia", 
+           "Ulyanovsk", "Samara", "Bashkortostan", 
+           "Primorsky", "Omsk", "Altai Krai", "Tuva", 
+           "Zabaykalsky", "Bryansk", "Oryol", 
+           "Tula", "Ryazan", "Penza", 
+           "Saratov", "Orenburg", "Altai Republic", 
+           "Kursk", "Lipetsk", "Tambov", 
+           "Belgorod", "Voronezh", "Volgograd", 
+           "Crimea", "Adygea", "Krasnodar", 
+           "Rostov", "Kalmykia", "Astrakhan", 
+           "Sevastopol",
+           "Karachay-Cherkessia", "Stavropol", 
+           "Chechnya", "Dagestan", 
+           "Kabardino-Balkaria", "North Ossetia", 
+           "Ingushetia"),
+  stringsAsFactors = FALSE
+)
+
+df_map_mortRates <- table_mortRates |>
+  select(regNameISO, mortalityRate) |>
+  rename(code = regNameISO) |>
+  mutate(x = rep(1,85),
+         y = rep(1,85))
+
+# Map
+
+map1 <- ggplot(df_map_mortRates, aes(x = x, y = y, fill = log(mortalityRate), label = code)) +
+  geom_col() +
+  geom_text(x = 1, y = 0.5, size = 4) +
+  facet_geo(~ code, grid = ru_federal_subjects_2022) +
+  theme_void() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_blank()
+  ) +
+  labs(fill="Log mortality rate \n(per 100,000 men)") +
+  scale_fill_distiller(palette = "Spectral", direction = -1)
+
+map1
+
+```
+
+## Relative risks by ethnic group for Russia
+
+```{r}
+# Number and proportion among the dead by ethnic group (assumed from the name)
+
+df |>
+  count(impliedEthnicity) |>
+  mutate(perc = n / sum(n)) |>
+  arrange(-n)
+
+# read in the data from census 2010 on ethnic proportions in the male Russian population
+# (Note that people with missing data on ethnicity were excluded from the calculation of proportions)
+
+census2010EthnPropPopulationAll <- read_csv("census2010EthnPropPopulationAll.csv")
+
+# aggregated and compared with the 2010 proportions
+
+df_relRisk <- df |>
+  mutate(newEthn = case_when(
+    impliedEthnicity == "BelRusUkr" ~ "BelRusUkr",
+    impliedEthnicity == "BashTat" ~ "BashTat",
+    impliedEthnicity == "CheDagIng" ~ "CheDagIngKabAdKarBalOs",
+    impliedEthnicity == "KabAdKarBalOs" ~ "CheDagIngKabAdKarBalOs",
+    impliedEthnicity == "Buryat" ~ "Buryat",
+    impliedEthnicity == "Tuvan" ~ "Tuvan",
+    TRUE ~ "other"
+  )) |>
+  count(newEthn) |>
+  mutate(sumKilled = sum(n)) |>
+  mutate(prop = n / sum(n)) |>
+  # join in data from the 2010 census
+  full_join(census2010EthnPropPopulationAll, by = "newEthn") |>
+  mutate(relRisk = prop / propPopulation) |>
+  arrange(-relRisk)
+
+df_relRisk
+
+
+# calculate confidence intervals for the risk ratios with DescTools (RelRisk())
+
+# The data should be presented as a 2x2 matrix.
+# In the first row: n killed / (n total in the data - n killed)
+# In the second row: n ethnic group (male pop 2010) / (n all men 2010 - n ethnic group male 2010)
+
+# This function calculates relative risk with 95% CIs for an ethnic group.
+
+relRiskCI <- function(x, ethn = ethn) {
+    x |>
+    filter(newEthn == ethn) |>
+    select(n, sumKilled, nPopulation, sumPopulation) |>
+    rename(nKilled = n) |>
+    mutate(nNotKilled = sumKilled - nKilled) |>
+    mutate(nPop_minusGroup = sumPopulation - nPopulation) |>
+    select(nKilled, nNotKilled, nPopulation, nPop_minusGroup) |>
+    as.numeric() |>
+    matrix(nrow = 2, byrow = TRUE) |>
+    RelRisk(conf.level = 0.95) 
+}
+
+# An example for Tuvans
+
+relRiskCI(df_relRisk, ethn = "Tuvan")
+  
+# Risk ratios with CIs for all ethnic groups
+
+df_RR_results <- data.frame()
+df_RR_results
+
+k <- 1
+for (i in df_relRisk$newEthn) {
+  df_RR_results <- rbind(df_RR_results, c(i, relRiskCI(df_relRisk, ethn = i)))
+  k <- k + 1
+}
+colnames(df_RR_results) <- c("ethn", "relRisk", "lowRelRiskCI", "highRelRiskCI")
+
+df_RR_results
+
+```
+
+## For some ethnic republics: proportion ethnic Russian names dead vs proportion of ethnic non-Russian names dead
+
+Republics to explore: Buryatia, Tuva, North Ossetia, Dagestan, Chechnya, Ingushetia, Adygeya, Bashkortostan, Kalmykia, Kabardino-Balkaria, Tatarstan, Karachaevo-Chekessiya, Astrakhan.
+
+```{r}
+
+# Read in the 2010 census data with the data on the ethnic composition by region
+
+census_2010_ethn <- read_csv("census_2010_ethn.csv")
+
+df_relRisk_region <- df |>
+  filter(region %in% c("Buryatia", "Tuva", "North Ossetia",
+                       "Dagestan", "Astrakhan.", "Chechnya",
+                       "Adygea", "Ingushetia", "Bashkortostan",
+                       "Kalmykia", "Kabardino-Balkaria", "Tatarstan",
+                       "Karachay-Cherkessia")) |>
+  mutate(ethnRusUkrBel = case_when(
+    impliedEthnicity == "BelRusUkr" ~ 1,
+    TRUE ~ 0
+  )) |>
+  mutate(nonethnRusUkrBel = case_when(
+    impliedEthnicity == "BelRusUkr" ~ 0,
+    TRUE ~ 1
+  )) |>
+  group_by(region) |>
+  summarise(
+    nKilled = n(),
+    nEthnRusUkrBel_killed = sum(ethnRusUkrBel, na.rm = TRUE),
+    nNonEthnRusUkrBel_killed = sum(nonethnRusUkrBel, na.rm = TRUE)
+  ) |>
+  # join with the census data
+  left_join(census_2010_ethn, by = c("region" = "regNameEng")) |>
+  select(region, nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nRusUkrBelMen) |>
+  mutate(propNonRusDead = nNonEthnRusUkrBel_killed / nKilled) |>
+  mutate(propNonRusAll = (nMen_ethn_nonmissing - nRusUkrBelMen) / nMen_ethn_nonmissing) |>
+  mutate(rr = propNonRusDead / propNonRusAll)
+
+df_relRisk_region |>
+  arrange(-rr) |>
+  print(n = Inf)
+
+# a function to calculate relative risks by region with confidence intervals
+  
+relRiskCI_region <- function(x, regName = region) {
+    x |>
+    filter(region == regName) |>
+    select(nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nRusUkrBelMen) |>
+    mutate(nRusKilled = nKilled - nNonEthnRusUkrBel_killed) |>
+    mutate(nNonRusPop = nMen_ethn_nonmissing - nRusUkrBelMen) |>
+    select(nNonEthnRusUkrBel_killed, nRusKilled, nNonRusPop, nRusUkrBelMen) |>
+    as.numeric() |>
+    matrix(nrow = 2, byrow = TRUE) |>
+    RelRisk(conf.level = 0.95) 
+}
+
+# An example for Tuva.
+
+relRiskCI_region(df_relRisk_region, regName = "Tuva")
+  
+# Risk ratios with CIs for all regions
+
+df_RR_results_region <- data.frame()
+df_RR_results_region
+
+k <- 1
+for (i in df_relRisk_region$region) {
+  df_RR_results_region <- rbind(df_RR_results_region, c(i, relRiskCI_region(df_relRisk_region, regName = i)))
+  k <- k + 1
+}
+colnames(df_RR_results_region) <- c("region", "relRisk", "lowRelRiskCI", "highRelRiskCI")
+
+df_RR_results_region
+
+```
+
+The relative risk shows if ethnic minorities are more likely to die than ethnic Russians. If RR > 1 ethnic minority names are more common among the dead, if RR < 1 the ethnic minority names are less common.
+
+## Correlations with regional characteristics
+
+```{r}
+
+# Read in regional characteristics for 2020:
+# percent below the subsistence level
+# unemployment rate
+# subsistence level (4th quarter 2020)
+# mean income per capita
+
+regionData <- read_csv("regionCharacteristics.csv")
+
+# Joining in with the data on regional mortality rates.
+
+regionData_joined <- table_mortRates |>
+  select(-regNameISO) |>
+  left_join(regionData, by = c("region" = "regNameEng")) |>
+  # calculate the regional income / subsistence level ratio
+  mutate(incomeToSubsitenceRatio = meanIncome / subsistenceLevel) |>
+  select(-regNameISO) |>
+  # Join in the data on proportion non-Russian population.
+  left_join(census_2010_ethn, by = c("region" = "regNameEng")) |>
+  mutate(percentNonRus = 100 - percRus)
+
+```
+
+```{r}
+# Scatter plots with non-parametric smooth
+
+# Percent non-ethnically Russian populationvs. mortality rate
+
+regionData_joined |>
+  ggplot(aes(x = percentNonRus, y = mortalityRate)) +
+  geom_point() +
+  geom_smooth() +
+  xlab("Percent non-ethnically Russian population") +
+  ylab("Regional mortality rate")
+
+# Data for percent non-ethnically Russian for Crimea and Sevastopol are not available from the 2010 census; these regions have been dropped.
+
+# Percent with the incomes below the subsistence level
+
+regionData_joined |>
+  ggplot(aes(x = percBelowSubsistence, y = mortalityRate)) +
+  geom_point() +
+  geom_smooth() +
+  xlab("Percent with income below subsistence") +
+  ylab("Regional mortality rate")
+
+
+# Correlation matrix
+
+regionData_joined |>
+  select(mortalityRate, percentNonRus, percBelowSubsistence, unemploymentRate, incomeToSubsitenceRatio) |>
+  as.matrix() |>
+  rcorr()
+
+# Regression model: mortality rate ~ percent below subsistence level + percent non-Russian
+
+m1 <- lm(mortalityRate ~ percBelowSubsistence + percentNonRus, regionData_joined)
+
+summary(m1)
+
+
+# Plots: mortality rate vs percent below subsistence level and percent non-ethnically Russian
+
+plot1 <- regionData_joined |>
+  ggplot(aes(x = percBelowSubsistence, y = mortalityRate, label = regNameISO)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text(nudge_x = 1) +
+  stat_cor(aes(label = ..r.label..), size = 8) +
+  xlab("Percent of incomes below subsistence level (2020)") +
+  ylab("Mortality rate per 100,000 men") +
+  theme(axis.title=element_text(size=16))
+
+
+plot2 <- regionData_joined |>
+  ggplot(aes(x = percentNonRus, y = mortalityRate, label = regNameISO)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_text(nudge_x = 3) +
+  stat_cor(aes(label = ..r.label..), size = 8) +
+  xlab("Percent of non-ethnically Russian population (2010)") +
+  ylab("Mortality rate per 100,000 men") +
+  theme(axis.title=element_text(size=16))
+
+
+figure2 <- ggarrange(plot1, plot2)
+figure2
+
+```
+
+## Prepare an anonymised data set for Github
+
+```{r}
+
+df_anon <- df |>
+  mutate(firstName = "removed") |>
+  mutate(lastName = "removed") |>
+  select(-c(impliedEthnicity, regNameISO))
+
+write_csv(df_anon, "dfCasualtiesAnonymised.csv", na = "")
+
+```
