@@ -2,6 +2,8 @@ Russian military losses in Ukraine
 ================
 December 2022
 
+#### The replication analysis for A.Bessudnov. (2022). “Ethnic and regional inequalities in the Russian military fatalities in the 2022 war in Ukraine”. SocArXiv. <https://osf.io/preprints/socarxiv/s43yf> . DOI 10.31235/osf.io/s43yf .
+
 ``` r
 library(tidyverse)
 library(geofacet)
@@ -15,7 +17,7 @@ options(tibble.width = Inf)
 df <- read_csv("dfCasualties.csv")
 ```
 
-## Casualties over time
+## Fatalities over time
 
 ``` r
 df |>
