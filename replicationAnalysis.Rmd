@@ -1,7 +1,7 @@
 ---
-title: "Russian military losses in Ukraine"
+title: "Russian military fatalities in Ukraine"
 output: github_document
-date: "December 2022"
+date: "April 2023"
 ---
 
 ```{r setup, include=FALSE}
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(warning = FALSE)
 knitr::opts_chunk$set(message = FALSE)
 ```
 
-#### The replication analysis for A.Bessudnov. (2022). "Ethnic and regional inequalities in the Russian military fatalities in the 2022 war in Ukraine". SocArXiv. https://osf.io/preprints/socarxiv/s43yf . DOI 10.31235/osf.io/s43yf .
+#### The replication analysis for A.Bessudnov. (2023). "Ethnic and regional inequalities in the Russian military fatalities in Ukraine: Preliminary findings from crowdsourced data". SocArXiv. https://osf.io/preprints/socarxiv/s43yf . DOI 10.31235/osf.io/s43yf .
 
 
 
@@ -21,10 +21,18 @@ library(DescTools)
 library(Hmisc)
 library(ggpubr)
 library(lubridate)
+library(zoo)
 
 options(tibble.width = Inf)
 
-df <- read_csv("dfCasualties.csv")
+df <- read_csv("dfFatalities12April2023.csv")
+```
+
+## Total number of fatalities in the data set
+
+```{r}
+df |>
+  count()
 ```
 
 ## Fatalities over time
@@ -32,13 +40,13 @@ df <- read_csv("dfCasualties.csv")
 ```{r}
 
 df |>
-  filter(deathConfirmedDate < dmy("2.12.2022")) |>
-  ggplot(aes(x = deathConfirmedDate)) +
-  geom_histogram(bins = 50) +
-  xlab("Date when death was confirmed")
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  count(monthDeath) |>
+  ggplot(aes(x = monthDeath, y = n)) +
+  geom_col() +
+  xlab("Month when death was confirmed")
 
 ```
-
 
 ## Number of men killed and mortality rate per capita by region
 
@@ -165,6 +173,7 @@ df |>
   arrange(-n)
 
 # read in the data from census 2010 on ethnic proportions in the male Russian population
+# (aged 8 to 32 at the time of the 2010 census, corresponding to 20 to 44 in 2022)
 # (Note that people with missing data on ethnicity were excluded from the calculation of proportions)
 
 census2010EthnPropPopulationAll <- read_csv("census2010EthnPropPopulationAll.csv")
@@ -187,7 +196,10 @@ df_relRisk <- df |>
   # join in data from the 2010 census
   full_join(census2010EthnPropPopulationAll, by = "newEthn") |>
   mutate(relRisk = prop / propPopulation) |>
-  arrange(-relRisk)
+  mutate(relRisk_4_50 = prop / propPopulation_4_50) |>
+  mutate(relRisk_8_32 = prop / propPopulation_8_32) |>
+  arrange(-relRisk_8_32)
+
 
 df_relRisk
 
@@ -199,15 +211,14 @@ df_relRisk
 # In the second row: n ethnic group (male pop 2010) / (n all men 2010 - n ethnic group male 2010)
 
 # This function calculates relative risk with 95% CIs for an ethnic group.
-
 relRiskCI <- function(x, ethn = ethn) {
     x |>
     filter(newEthn == ethn) |>
-    select(n, sumKilled, nPopulation, sumPopulation) |>
+    select(n, sumKilled, nPopulation_8_32, sumPopulation_8_32) |>
     rename(nKilled = n) |>
     mutate(nNotKilled = sumKilled - nKilled) |>
-    mutate(nPop_minusGroup = sumPopulation - nPopulation) |>
-    select(nKilled, nNotKilled, nPopulation, nPop_minusGroup) |>
+    mutate(nPop_minusGroup_8_32 = sumPopulation_8_32 - nPopulation_8_32) |>
+    select(nKilled, nNotKilled, nPopulation_8_32, nPop_minusGroup_8_32) |>
     as.numeric() |>
     matrix(nrow = 2, byrow = TRUE) |>
     RelRisk(conf.level = 0.95) 
@@ -230,12 +241,13 @@ for (i in df_relRisk$newEthn) {
 colnames(df_RR_results) <- c("ethn", "relRisk", "lowRelRiskCI", "highRelRiskCI")
 
 df_RR_results
-
 ```
 
 ## For some ethnic republics: proportion ethnic Russian names dead vs proportion of ethnic non-Russian names dead
 
 Republics to explore: Buryatia, Tuva, North Ossetia, Dagestan, Chechnya, Ingushetia, Adygeya, Bashkortostan, Kalmykia, Kabardino-Balkaria, Tatarstan, Karachaevo-Chekessiya, Astrakhan.
+
+Risk ratios calculated with the data on male population aged 8 to 32 in 2010 (20 to 44 in 2022).
 
 ```{r}
 
@@ -245,7 +257,7 @@ census_2010_ethn <- read_csv("census_2010_ethn.csv")
 
 df_relRisk_region <- df |>
   filter(region %in% c("Buryatia", "Tuva", "North Ossetia",
-                       "Dagestan", "Astrakhan.", "Chechnya",
+                       "Dagestan", "Astrakhan", "Chechnya",
                        "Adygea", "Ingushetia", "Bashkortostan",
                        "Kalmykia", "Kabardino-Balkaria", "Tatarstan",
                        "Karachay-Cherkessia")) |>
@@ -265,13 +277,18 @@ df_relRisk_region <- df |>
   ) |>
   # join with the census data
   left_join(census_2010_ethn, by = c("region" = "regNameEng")) |>
-  select(region, nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nRusUkrBelMen) |>
+  select(region, nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nMen_ethn_nonmissing_4_50, nMen_ethn_nonmissing_8_32, nRusUkrBelMen, nRusUkrBelMen_4_50, nRusUkrBelMen_8_32) |>
   mutate(propNonRusDead = nNonEthnRusUkrBel_killed / nKilled) |>
   mutate(propNonRusAll = (nMen_ethn_nonmissing - nRusUkrBelMen) / nMen_ethn_nonmissing) |>
-  mutate(rr = propNonRusDead / propNonRusAll)
+  mutate(propNonRusAll_4_50 = (nMen_ethn_nonmissing_4_50 - nRusUkrBelMen_4_50) / nMen_ethn_nonmissing_4_50) |>
+  mutate(propNonRusAll_8_32 = (nMen_ethn_nonmissing_8_32 - nRusUkrBelMen_8_32) / nMen_ethn_nonmissing_8_32) |>
+  mutate(rr = propNonRusDead / propNonRusAll) |>
+  mutate(rr_4_50 = propNonRusDead / propNonRusAll_4_50) |>
+  mutate(rr_8_32 = propNonRusDead / propNonRusAll_8_32)
+
 
 df_relRisk_region |>
-  arrange(-rr) |>
+  arrange(-rr_8_32) |>
   print(n = Inf)
 
 # a function to calculate relative risks by region with confidence intervals
@@ -279,10 +296,10 @@ df_relRisk_region |>
 relRiskCI_region <- function(x, regName = region) {
     x |>
     filter(region == regName) |>
-    select(nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nRusUkrBelMen) |>
-    mutate(nRusKilled = nKilled - nNonEthnRusUkrBel_killed) |>
-    mutate(nNonRusPop = nMen_ethn_nonmissing - nRusUkrBelMen) |>
-    select(nNonEthnRusUkrBel_killed, nRusKilled, nNonRusPop, nRusUkrBelMen) |>
+    select(nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing_8_32, nRusUkrBelMen_8_32) |>
+    mutate(nRusUkrBelKilled = nKilled - nNonEthnRusUkrBel_killed) |>
+    mutate(nNonRusPop_8_32 = nMen_ethn_nonmissing_8_32 - nRusUkrBelMen_8_32) |>
+    select(nNonEthnRusUkrBel_killed, nRusUkrBelKilled, nNonRusPop_8_32, nRusUkrBelMen_8_32) |>
     as.numeric() |>
     matrix(nrow = 2, byrow = TRUE) |>
     RelRisk(conf.level = 0.95) 
@@ -309,6 +326,213 @@ df_RR_results_region
 ```
 
 The relative risk shows if ethnic minorities are more likely to die than ethnic Russians. If RR > 1 ethnic minority names are more common among the dead, if RR < 1 the ethnic minority names are less common.
+
+## Distribution by age
+
+```{r}
+# mean age
+df |>
+  summarise(
+    mean(age, na.rm = TRUE)
+  )
+
+# distribution by age
+
+df |>
+  ggplot(aes(x = age)) +
+  geom_bar() +
+  xlab("Age") +
+  ylab("Number")
+
+```
+
+## Number of deaths and proportion Slavic by type of military force
+
+```{r}
+df |>
+  mutate(BelRusUkr = case_when(
+      impliedEthnicity == "BelRusUkr" ~ 1,
+      TRUE ~ 0
+    )) |>
+  group_by(unitType) |>
+  summarise(
+    nType = n(),
+    propSlavic = mean(BelRusUkr, na.rm = TRUE)
+    ) |>
+  mutate(propType = nType / sum(nType)) |>
+  select(unitType, nType, propType, propSlavic)
+
+
+```
+
+## Deaths by month and type of military unit
+
+```{r}
+unitType12Apr <- df |>
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  mutate(unitType = case_when(
+    is.na(unitType) ~ "missing data",
+    TRUE ~ unitType
+  )) |>
+  mutate(unitType = factor(unitType,
+            levels = c("inmates", "private military company", "conscripted", "volunteers",
+                       "police / national guard / FSB", "professional army", "missing data"))) |>
+  filter(!is.na(monthDeath)) |>
+  count(unitType, monthDeath) |>
+  ggplot(aes(x = monthDeath, y = n, fill = unitType)) +
+  geom_col() +
+  ylab("Number of deaths") +
+  xlab("Date of death confirmation") +
+  # theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  labs(fill = "Unit type") +
+  theme(text = element_text(size=20))
+
+unitType12Apr
+
+```
+
+## Changes over time by ethnic group and region
+
+```{r}
+ethnTrend12Apr <- df |>
+  mutate(newEthn = case_when(
+    impliedEthnicity == "BelRusUkr" ~ "Slavic",
+    impliedEthnicity == "BashTat" ~ "BashTat",
+    impliedEthnicity == "CheDagIng" ~ "North Caucasian",
+    impliedEthnicity == "KabAdKarBalOs" ~ "North Caucasian",
+    impliedEthnicity == "Buryat" ~ "Buryat",
+    impliedEthnicity == "Tuvan" ~ "Tuvan",
+    TRUE ~ "other"
+  )) |>
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  count(monthDeath, newEthn) |>
+  group_by(monthDeath) |>
+  mutate(propMonth = n / sum(n)) |>
+  filter(newEthn %in% c("Slavic", "Buryat", "Tuvan", "North Caucasian")) |>
+  filter(monthDeath > "Feb 2022") |>
+  ggplot(
+    aes(x = monthDeath, y = propMonth)
+  ) +
+  geom_point() +
+  geom_smooth(colour = "black", se = FALSE) +
+  xlab("Date of death confirmation") +
+  ylab("Proportion among deaths") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  facet_wrap(~ newEthn, scales="free_y") +
+  theme(text = element_text(size=20))
+
+ethnTrend12Apr 
+
+
+dfMacroRegionMonth <- df |>
+  mutate(macroRegion = case_when(
+      region == "Arkhangelsk" ~ "North / East",
+      region == "Nenets" ~ "North / East",
+      region == "Tyumen" ~ "North / East",
+      region == "Khanty-Mansi" ~ "North / East",
+      region == "Yamalo-Nenets" ~ "North / East",
+      region == "Altai Krai" ~ "North / East",
+      region == "Krasnodar" ~ "South",
+      region == "Krasnoyarsk" ~ "North / East",
+      region == "Primorsky" ~ "North / East",
+      region == "Stavropol" ~ "South",
+      region == "Khabarovsk" ~ "North / East",
+      region == "Amur" ~ "North / East",
+      region == "Astrakhan" ~ "South",
+      region == "Belgorod" ~ "Central",
+      region == "Bryansk" ~ "Central",
+      region == "Vladimir" ~ "Central",
+      region == "Volgograd" ~ "South",
+      region == "Vologda" ~ "Central",
+      region == "Voronezh" ~ "Central",
+      region == "Nizhny Novgorod" ~ "Volga",
+      region == "Ivanovo" ~ "Central",
+      region == "Irkutsk" ~ "North / East",
+      region == "Ingushetia" ~ "South",
+      region == "Kaliningrad" ~ "Central",
+      region == "Tver" ~ "Central",
+      region == "Kaluga" ~ "Central",
+      region == "Kamchatka" ~ "North / East",
+      region == "Kemerovo" ~ "North / East",
+      region == "Kirov" ~ "Volga",
+      region == "Kostroma" ~ "Central",
+      region == "Samara" ~ "Volga",
+      region == "Kurgan" ~ "North / East",
+      region == "Kursk" ~ "Central",
+      region == "St.Petersburg" ~ "Central",
+      region == "Leningrad" ~ "Central",
+      region == "Lipetsk" ~ "Central",
+      region == "Magadan" ~ "North / East",
+      region == "Moscow" ~ "Central",
+      region == "Moscow Oblast" ~ "Central",
+      region == "Murmansk" ~ "North / East",
+      region == "Novgorod" ~ "Central",
+      region == "Novosibirsk" ~ "North / East",
+      region == "Omsk" ~ "North / East",
+      region == "Orenburg" ~ "Volga",
+      region == "Oryol" ~ "Central",
+      region == "Penza" ~ "Volga",
+      region == "Perm" ~ "Volga",
+      region == "Pskov" ~ "Central",
+      region == "Rostov" ~ "South",
+      region == "Ryazan" ~ "Central",
+      region == "Saratov" ~ "Volga",
+      region == "Sakhalin" ~ "North / East",
+      region == "Sverdlovsk" ~ "North / East",
+      region == "Smolensk" ~ "Central",
+      region == "Tambov" ~ "Central",
+      region == "Tomsk" ~ "North / East",
+      region == "Tula" ~ "Central",
+      region == "Ulyanovsk" ~ "Volga",
+      region == "Chelyabinsk" ~ "North / East",
+      region == "Zabaykalsky" ~ "North / East",
+      region == "Chukotka" ~ "North / East",
+      region == "Yaroslavl" ~ "Central",
+      region == "Adygea" ~ "South",
+      region == "Bashkortostan" ~ "Volga",
+      region == "Buryatia" ~ "North / East",
+      region == "Dagestan" ~ "South",
+      region == "Kabardino-Balkaria" ~ "South",
+      region == "Altai Republic" ~ "North / East",
+      region == "Kalmykia" ~ "South",
+      region == "Karelia" ~ "North / East",
+      region == "Komi" ~ "North / East",
+      region == "Mari El" ~ "Volga",
+      region == "Mordovia" ~ "Volga",
+      region == "North Ossetia" ~ "South",
+      region == "Karachay-Cherkessia" ~ "South",
+      region == "Tatarstan" ~ "Volga",
+      region == "Tuva" ~ "North / East",
+      region == "Udmurtia" ~ "Volga",
+      region == "Khakassia" ~ "North / East",
+      region == "Chechnya" ~ "South",
+      region == "Chuvashia" ~ "Volga",
+      region == "Sakha" ~ "North / East",
+      region == "Yevreyskaya" ~ "North / East",
+      region == "Sevastopol" ~ "South",
+      region == "Crimea" ~ "South")
+  ) |>
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  count(monthDeath, macroRegion) |>
+  group_by(monthDeath) |>
+  mutate(propDeaths = n / sum(n)) 
+      
+dfMacroRegionMonth 
+
+regionTrend12Apr <- dfMacroRegionMonth  |>
+   filter(monthDeath > "Feb 2022") |>
+   filter(!is.na(macroRegion)) |>
+   ggplot(aes(x = monthDeath, y = propDeaths)) +
+   geom_point() +
+   geom_smooth(colour = "black", se = FALSE) +
+  xlab("Date of death confirmation") +
+  ylab("Proportion among deaths") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  facet_wrap(~ macroRegion)  +
+  theme(text = element_text(size=20))
+
+regionTrend12Apr
+```
 
 ## Correlations with regional characteristics
 
@@ -360,12 +584,6 @@ regionData_joined |>
   ylab("Regional mortality rate")
 
 
-# Correlation matrix
-
-regionData_joined |>
-  select(mortalityRate, percentNonRus, percBelowSubsistence, unemploymentRate, incomeToSubsitenceRatio) |>
-  as.matrix() |>
-  rcorr()
 
 # Regression model: mortality rate ~ percent below subsistence level + percent non-Russian
 
@@ -403,15 +621,79 @@ figure2
 
 ```
 
+## Validation with the Yandex data
+
+I collected data on Yandex searches by region (https://wordstat.yandex.com/#!/regions) for two search expressions: "сво выплаты" ("special military operation payments", over 25,000 monthly searches) and "выплаты погибшим" ("payments for killed", over 50,000 monthly searches). The data were collected on 10 February 2023. These are not historical data so it reflects the situation as in January 2023.
+
+(Update: in another round of data collection, I collected Yandex data on 19 April.)
+
+The data show regional popularity of search term, i.e. the affinity index which is the regional the share of searches for the word/expression divided over the total share of all searches in that region.
+
+The correlation between the Yandex searches and the fatality rate is 0.4 or 0.5, depending on the search term.
+
+```{r}
+
+# Reading Yandex searches data
+
+yandex_df <- read_csv("yandex_searches.csv")
+
+# Joining with the fatality rates data
+
+yandex_df <- yandex_df |>
+  left_join(table_mortRates, by = "regNameISO")
+
+# "svo vyplaty" (10 Feb)
+
+cor(yandex_df$svo_vyplaty_10Feb, yandex_df$mortalityRate)
+
+# "vyplaty pogibshim" (10 Feb)
+
+cor(yandex_df$vyplaty_pogibshim_10Feb, yandex_df$mortalityRate)
+
+# April 2023 data
+
+# vyplaty pogibshim (19 Apr)
+cor(yandex_df$vyplaty_pogibshim_19Apr, yandex_df$mortalityRate)
+
+
+
+yandex_df |>
+  ggplot(aes(x = vyplaty_pogibshim_10Feb, y = mortalityRate, label = regNameISO)) +
+  geom_smooth() +
+  geom_text() +
+  xlab("vyplaty pogibshim search regional affinity index (10 Feb)") +
+  ylab("Fatality rate")
+
+yandex_df |>
+  ggplot(aes(x = vyplaty_pogibshim_19Apr, y = mortalityRate, label = regNameISO)) +
+  geom_smooth() +
+  geom_text() +
+  xlab("vyplaty pogibshim search regional affinity index (19 Apr)") +
+  ylab("Fatality rate")
+
+```
+
+## Proportion of records with archived source
+
+```{r}
+df |>
+  summarise(
+    sum(is.na(source))
+  )
+
+1355 / 20253
+
+```
+
 ## Prepare an anonymised data set for Github
 
 ```{r}
 
 df_anon <- df |>
-  mutate(firstName = "removed") |>
-  mutate(lastName = "removed") |>
-  select(-c(impliedEthnicity, regNameISO))
+  mutate(first_name = "removed") |>
+  mutate(last_name = "removed") |>
+  mutate(impliedEthnicity = "removed")
 
-write_csv(df_anon, "dfCasualtiesAnonymised.csv", na = "")
+write_csv(df_anon, "dfFatalitiesAnonymised.csv", na = "")
 
 ```

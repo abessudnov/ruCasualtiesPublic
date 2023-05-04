@@ -1,8 +1,8 @@
-Russian military losses in Ukraine
+Russian military fatalities in Ukraine
 ================
-December 2022
+April 2023
 
-#### The replication analysis for A.Bessudnov. (2022). “Ethnic and regional inequalities in the Russian military fatalities in the 2022 war in Ukraine”. SocArXiv. <https://osf.io/preprints/socarxiv/s43yf> . DOI 10.31235/osf.io/s43yf .
+#### The replication analysis for A.Bessudnov. (2023). “Ethnic and regional inequalities in the Russian military fatalities in Ukraine: Preliminary findings from crowdsourced data”. SocArXiv. <https://osf.io/preprints/socarxiv/s43yf> . DOI 10.31235/osf.io/s43yf .
 
 ``` r
 library(tidyverse)
@@ -11,23 +11,37 @@ library(DescTools)
 library(Hmisc)
 library(ggpubr)
 library(lubridate)
+library(zoo)
 
 options(tibble.width = Inf)
 
-df <- read_csv("dfCasualties.csv")
+df <- read_csv("dfFatalities12April2023.csv")
 ```
+
+## Total number of fatalities in the data set
+
+``` r
+df |>
+  count()
+```
+
+    ## # A tibble: 1 × 1
+    ##       n
+    ##   <int>
+    ## 1 20253
 
 ## Fatalities over time
 
 ``` r
 df |>
-  filter(deathConfirmedDate < dmy("2.12.2022")) |>
-  ggplot(aes(x = deathConfirmedDate)) +
-  geom_histogram(bins = 50) +
-  xlab("Date when death was confirmed")
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  count(monthDeath) |>
+  ggplot(aes(x = monthDeath, y = n)) +
+  geom_col() +
+  xlab("Month when death was confirmed")
 ```
 
-![](replicationAnalysis_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ## Number of men killed and mortality rate per capita by region
 
@@ -63,178 +77,178 @@ table_mortRates |>
     ## # A tibble: 85 × 7
     ##    region              regNameISO     n nMen16_615_2021 mortalityRate
     ##    <chr>               <chr>      <int>           <dbl>         <dbl>
-    ##  1 Buryatia            BU           353          278885        127.  
-    ##  2 Tuva                TY           115           92884        124.  
-    ##  3 Altai Republic      AL            46           58226         79.0 
-    ##  4 Zabaykalsky         ZAB          225          297873         75.5 
-    ##  5 North Ossetia       SE           148          207166         71.4 
-    ##  6 Kostroma            KOS          108          161784         66.8 
-    ##  7 Pskov               PSK          107          173864         61.5 
-    ##  8 Sakhalin            SAK           89          147268         60.4 
-    ##  9 Yevreyskaya         YEV           24           45466         52.8 
-    ## 10 Kamchatka           KAM           43           95111         45.2 
-    ## 11 Ulyanovsk           ULY          154          347851         44.3 
-    ## 12 Chukotka            CHU            7           16138         43.4 
-    ## 13 Komi                KO            92          221218         41.6 
-    ## 14 Magadan             MAG           19           45707         41.6 
-    ## 15 Mari El             ME            81          197794         41.0 
-    ## 16 Nenets              NEN            5           12717         39.3 
-    ## 17 Sevastopol          UA-40         68          179931         37.8 
-    ## 18 Orenburg            ORE          200          538936         37.1 
-    ## 19 Bryansk             BRY          126          345546         36.5 
-    ## 20 Volgograd           VGG          282          787188         35.8 
-    ## 21 Dagestan            DA           354          990582         35.7 
-    ## 22 Kalmykia            KL            28           80177         34.9 
-    ## 23 Khakassia           KK            52          150548         34.5 
-    ## 24 Kurgan              KGN           73          213102         34.3 
-    ## 25 Kaliningrad         KGD          108          320095         33.7 
-    ## 26 Kirov               KIR          107          321441         33.3 
-    ## 27 Karelia             KR            49          150418         32.6 
-    ## 28 Ryazan              RYA          102          319814         31.9 
-    ## 29 Chuvashia           CU           107          342404         31.2 
-    ## 30 Ivanovo             IVA           83          266919         31.1 
-    ## 31 Chechnya            CE           135          462280         29.2 
-    ## 32 Udmurtia            UD           121          418157         28.9 
-    ## 33 Chelyabinsk         CHE          290         1008253         28.8 
-    ## 34 Kursk               KRS           87          310158         28.1 
-    ## 35 Altai Krai          ALT          166          593766         28.0 
-    ## 36 Astrakhan           AST           79          288596         27.4 
-    ## 37 Adygea              AD            39          145977         26.7 
-    ## 38 Tambov              TAM           77          289077         26.6 
-    ## 39 Arkhangelsk         ARK           74          284986         26.0 
-    ## 40 Perm                PER          189          733107         25.8 
-    ## 41 Saratov             SAR          190          739119         25.7 
-    ## 42 Omsk                OMS          136          545368         24.9 
-    ## 43 Murmansk            MUR           53          213224         24.9 
-    ## 44 Kabardino-Balkaria  KB            67          275463         24.3 
-    ## 45 Amur                AMU           58          239274         24.2 
-    ## 46 Belgorod            BEL          109          453917         24.0 
-    ## 47 Bashkortostan       BA           297         1239319         24.0 
-    ## 48 Sverdlovsk          SVE          306         1284804         23.8 
-    ## 49 Krasnodar           KDA          419         1788305         23.4 
-    ## 50 Khabarovsk          KHA           93          403638         23.0 
-    ## 51 Oryol               ORL           47          207507         22.6 
-    ## 52 Primorsky           PRI          130          576846         22.5 
-    ## 53 Stavropol           STA          194          892044         21.7 
-    ## 54 Crimea              UA-43        119          557147         21.4 
-    ## 55 Vologda             VLG           69          330328         20.9 
-    ## 56 Penza               PNZ           75          365483         20.5 
-    ## 57 Rostov              ROS          261         1274849         20.5 
-    ## 58 Karachay-Cherkessia KC            28          139233         20.1 
-    ## 59 Vladimir            VLA           79          395638         20.0 
-    ## 60 Smolensk            SMO           52          262742         19.8 
-    ## 61 Novgorod            NGR           32          162326         19.7 
-    ## 62 Ingushetia          IN            34          173094         19.6 
-    ## 63 Nizhny Novgorod     NIZ          179          912761         19.6 
-    ## 64 Irkutsk             IRK          133          684291         19.4 
-    ## 65 Voronezh            VOR          133          692268         19.2 
-    ## 66 Tver                TVE           67          361629         18.5 
-    ## 67 Tyumen              TYU           81          454731         17.8 
-    ## 68 Lipetsk             LIP           57          332336         17.2 
-    ## 69 Novosibirsk         NVS          139          821000         16.9 
-    ## 70 Tatarstan           TA           196         1191152         16.5 
-    ## 71 Krasnoyarsk         KYA          139          867922         16.0 
-    ## 72 Yaroslavl           YAR           55          344538         16.0 
-    ## 73 Samara              SAM          149          938500         15.9 
-    ## 74 Mordovia            MO            36          237055         15.2 
-    ## 75 Tula                TUL           65          441544         14.7 
-    ## 76 Sakha               SA            44          309283         14.2 
-    ## 77 Kemerovo            KEM           95          754643         12.6 
-    ## 78 Tomsk               TOM           39          321782         12.1 
-    ## 79 Kaluga              KLU           38          330134         11.5 
-    ## 80 Leningrad           LEN           71          639765         11.1 
-    ## 81 Yamalo-Nenets       YAN           12          169683          7.07
-    ## 82 Khanty-Mansi        KHM           37          548522          6.75
-    ## 83 Moscow Oblast       MOS          149         2812520          5.30
-    ## 84 St.Petersburg       SPE           79         1711227          4.62
-    ## 85 Moscow              MOW           54         4096435          1.32
+    ##  1 Tuva                TY           231           92884        249.  
+    ##  2 Buryatia            BU           643          278885        231.  
+    ##  3 Nenets              NEN           27           12717        212.  
+    ##  4 Zabaykalsky         ZAB          476          297873        160.  
+    ##  5 Magadan             MAG           66           45707        144.  
+    ##  6 Chukotka            CHU           23           16138        143.  
+    ##  7 Altai Republic      AL            78           58226        134.  
+    ##  8 Sakhalin            SAK          182          147268        124.  
+    ##  9 North Ossetia       SE           229          207166        111.  
+    ## 10 Pskov               PSK          187          173864        108.  
+    ## 11 Kostroma            KOS          163          161784        101.  
+    ## 12 Komi                KO           214          221218         96.7 
+    ## 13 Karelia             KR           139          150418         92.4 
+    ## 14 Bryansk             BRY          295          345546         85.4 
+    ## 15 Arkhangelsk         ARK          236          284986         82.8 
+    ## 16 Kurgan              KGN          164          213102         77.0 
+    ## 17 Mari El             ME           148          197794         74.8 
+    ## 18 Orenburg            ORE          401          538936         74.4 
+    ## 19 Khakassia           KK           111          150548         73.7 
+    ## 20 Kursk               KRS          224          310158         72.2 
+    ## 21 Kirov               KIR          231          321441         71.9 
+    ## 22 Kamchatka           KAM           67           95111         70.4 
+    ## 23 Ulyanovsk           ULY          244          347851         70.1 
+    ## 24 Yevreyskaya         YEV           31           45466         68.2 
+    ## 25 Volgograd           VGG          526          787188         66.8 
+    ## 26 Chelyabinsk         CHE          668         1008253         66.3 
+    ## 27 Perm                PER          482          733107         65.7 
+    ## 28 Astrakhan           AST          186          288596         64.4 
+    ## 29 Murmansk            MUR          137          213224         64.3 
+    ## 30 Sverdlovsk          SVE          804         1284804         62.6 
+    ## 31 Kaliningrad         KGD          198          320095         61.9 
+    ## 32 Vologda             VLG          202          330328         61.2 
+    ## 33 Kalmykia            KL            48           80177         59.9 
+    ## 34 Novgorod            NGR           96          162326         59.1 
+    ## 35 Belgorod            BEL          264          453917         58.2 
+    ## 36 Oryol               ORL          119          207507         57.3 
+    ## 37 Udmurtia            UD           232          418157         55.5 
+    ## 38 Tambov              TAM          158          289077         54.7 
+    ## 39 Primorsky           PRI          312          576846         54.1 
+    ## 40 Ivanovo             IVA          144          266919         53.9 
+    ## 41 Adygea              AD            76          145977         52.1 
+    ## 42 Saratov             SAR          384          739119         52.0 
+    ## 43 Omsk                OMS          274          545368         50.2 
+    ## 44 Samara              SAM          470          938500         50.1 
+    ## 45 Dagestan            DA           495          990582         50.0 
+    ## 46 Bashkortostan       BA           612         1239319         49.4 
+    ## 47 Altai Krai          ALT          290          593766         48.8 
+    ## 48 Tver                TVE          175          361629         48.4 
+    ## 49 Irkutsk             IRK          330          684291         48.2 
+    ## 50 Chuvashia           CU           165          342404         48.2 
+    ## 51 Sevastopol          UA-40         84          179931         46.7 
+    ## 52 Ryazan              RYA          148          319814         46.3 
+    ## 53 Krasnodar           KDA          817         1788305         45.7 
+    ## 54 Krasnoyarsk         KYA          396          867922         45.6 
+    ## 55 Tyumen              TYU          199          454731         43.8 
+    ## 56 Stavropol           STA          385          892044         43.2 
+    ## 57 Sakha               SA           133          309283         43.0 
+    ## 58 Lipetsk             LIP          140          332336         42.1 
+    ## 59 Nizhny Novgorod     NIZ          382          912761         41.9 
+    ## 60 Chechnya            CE           193          462280         41.7 
+    ## 61 Vladimir            VLA          165          395638         41.7 
+    ## 62 Amur                AMU           99          239274         41.4 
+    ## 63 Voronezh            VOR          285          692268         41.2 
+    ## 64 Penza               PNZ          148          365483         40.5 
+    ## 65 Novosibirsk         NVS          330          821000         40.2 
+    ## 66 Rostov              ROS          503         1274849         39.5 
+    ## 67 Yaroslavl           YAR          133          344538         38.6 
+    ## 68 Smolensk            SMO          100          262742         38.1 
+    ## 69 Crimea              UA-43        203          557147         36.4 
+    ## 70 Tomsk               TOM          113          321782         35.1 
+    ## 71 Karachay-Cherkessia KC            48          139233         34.5 
+    ## 72 Kemerovo            KEM          260          754643         34.5 
+    ## 73 Khabarovsk          KHA          134          403638         33.2 
+    ## 74 Kabardino-Balkaria  KB            89          275463         32.3 
+    ## 75 Tatarstan           TA           372         1191152         31.2 
+    ## 76 Mordovia            MO            73          237055         30.8 
+    ## 77 Yamalo-Nenets       YAN           52          169683         30.6 
+    ## 78 Khanty-Mansi        KHM          164          548522         29.9 
+    ## 79 Leningrad           LEN          186          639765         29.1 
+    ## 80 Tula                TUL          115          441544         26.0 
+    ## 81 Kaluga              KLU           85          330134         25.7 
+    ## 82 Ingushetia          IN            38          173094         22.0 
+    ## 83 Moscow Oblast       MOS          366         2812520         13.0 
+    ## 84 St.Petersburg       SPE          175         1711227         10.2 
+    ## 85 Moscow              MOW          125         4096435          3.05
     ##    mortalityRate_lowCI mortalityRate_highCI
     ##                  <dbl>                <dbl>
-    ##  1              114.                 141.  
-    ##  2              103.                 149.  
-    ##  3               58.5                106.  
-    ##  4               66.1                 86.2 
-    ##  5               60.6                 84.2 
-    ##  6               55.0                 80.9 
-    ##  7               50.7                 74.7 
-    ##  8               48.8                 74.7 
-    ##  9               34.6                 79.9 
-    ## 10               33.1                 61.5 
-    ## 11               37.7                 52.0 
-    ## 12               19.0                 93.7 
-    ## 13               33.7                 51.2 
-    ## 14               25.8                 66.3 
-    ## 15               32.7                 51.2 
-    ## 16               14.5                 97.5 
-    ## 17               29.6                 48.2 
-    ## 18               32.2                 42.7 
-    ## 19               30.5                 43.6 
-    ## 20               31.8                 40.3 
-    ## 21               32.2                 39.7 
-    ## 22               23.7                 51.2 
-    ## 23               26.1                 45.7 
-    ## 24               27.0                 43.3 
-    ## 25               27.8                 40.9 
-    ## 26               27.4                 40.4 
-    ## 27               24.4                 43.4 
-    ## 28               26.1                 38.9 
-    ## 29               25.7                 37.9 
-    ## 30               24.9                 38.7 
-    ## 31               24.6                 34.7 
-    ## 32               24.1                 34.7 
-    ## 33               25.6                 32.3 
-    ## 34               22.6                 34.8 
-    ## 35               23.9                 32.6 
-    ## 36               21.8                 34.3 
-    ## 37               19.3                 36.9 
-    ## 38               21.2                 33.5 
-    ## 39               20.5                 32.8 
-    ## 40               22.3                 29.8 
-    ## 41               22.2                 29.7 
-    ## 42               21.0                 29.6 
-    ## 43               18.8                 32.8 
-    ## 44               19.0                 31.1 
-    ## 45               18.6                 31.6 
-    ## 46               19.8                 29.1 
-    ## 47               21.4                 26.9 
-    ## 48               21.3                 26.7 
-    ## 49               21.3                 25.8 
-    ## 50               18.7                 28.4 
-    ## 51               16.8                 30.4 
-    ## 52               18.9                 26.9 
-    ## 53               18.8                 25.1 
-    ## 54               17.8                 25.7 
-    ## 55               16.4                 26.6 
-    ## 56               16.3                 25.9 
-    ## 57               18.1                 23.2 
-    ## 58               13.6                 29.5 
-    ## 59               15.9                 25.0 
-    ## 60               14.9                 26.2 
-    ## 61               13.7                 28.2 
-    ## 62               13.8                 27.8 
-    ## 63               16.9                 22.8 
-    ## 64               16.3                 23.1 
-    ## 65               16.1                 22.8 
-    ## 66               14.5                 23.7 
-    ## 67               14.2                 22.3 
-    ## 68               13.1                 22.4 
-    ## 69               14.3                 20.1 
-    ## 70               14.3                 19.0 
-    ## 71               13.5                 19.0 
-    ## 72               12.1                 20.9 
-    ## 73               13.5                 18.7 
-    ## 74               10.8                 21.3 
-    ## 75               11.5                 18.9 
-    ## 76               10.5                 19.3 
-    ## 77               10.2                 15.5 
-    ## 78                8.74                16.7 
-    ## 79                8.26                16.0 
-    ## 80                8.73                14.1 
-    ## 81                3.83                12.7 
-    ## 82                4.82                 9.40
-    ## 83                4.50                 6.24
-    ## 84                3.68                 5.79
-    ## 85                1.00                 1.73
+    ##  1              218.                 283.  
+    ##  2              213.                 249.  
+    ##  3              143.                 313.  
+    ##  4              146.                 175.  
+    ##  5              113.                 185.  
+    ##  6               92.5                217.  
+    ##  7              107.                 168.  
+    ##  8              107.                 143.  
+    ##  9               96.9                126.  
+    ## 10               92.9                124.  
+    ## 11               86.1                118.  
+    ## 12               84.4                111.  
+    ## 13               78.0                109.  
+    ## 14               76.0                 95.8 
+    ## 15               72.7                 94.3 
+    ## 16               65.8                 89.9 
+    ## 17               63.5                 88.2 
+    ## 18               67.4                 82.1 
+    ## 19               60.9                 89.1 
+    ## 20               63.2                 82.5 
+    ## 21               63.0                 81.9 
+    ## 22               55.0                 90.0 
+    ## 23               61.7                 79.7 
+    ## 24               47.1                 98.1 
+    ## 25               61.3                 72.8 
+    ## 26               61.4                 71.5 
+    ## 27               60.1                 72.0 
+    ## 28               55.7                 74.6 
+    ## 29               54.1                 76.2 
+    ## 30               58.4                 67.1 
+    ## 31               53.7                 71.3 
+    ## 32               53.1                 70.3 
+    ## 33               44.6                 80.1 
+    ## 34               48.2                 72.5 
+    ## 35               51.5                 65.7 
+    ## 36               47.7                 68.9 
+    ## 37               48.7                 63.2 
+    ## 38               46.6                 64.1 
+    ## 39               48.3                 60.5 
+    ## 40               45.7                 63.7 
+    ## 41               41.3                 65.5 
+    ## 42               46.9                 57.5 
+    ## 43               44.5                 56.6 
+    ## 44               45.7                 54.9 
+    ## 45               45.7                 54.6 
+    ## 46               45.6                 53.5 
+    ## 47               43.5                 54.9 
+    ## 48               41.6                 56.3 
+    ## 49               43.2                 53.8 
+    ## 50               41.2                 56.3 
+    ## 51               37.5                 58.1 
+    ## 52               39.3                 54.5 
+    ## 53               42.6                 49.0 
+    ## 54               41.3                 50.4 
+    ## 55               38.0                 50.4 
+    ## 56               39.0                 47.7 
+    ## 57               36.1                 51.1 
+    ## 58               35.6                 49.9 
+    ## 59               37.8                 46.3 
+    ## 60               36.2                 48.2 
+    ## 61               35.7                 48.7 
+    ## 62               33.8                 50.6 
+    ## 63               36.6                 46.3 
+    ## 64               34.3                 47.7 
+    ## 65               36.0                 44.8 
+    ## 66               36.1                 43.1 
+    ## 67               32.4                 45.9 
+    ## 68               31.1                 46.5 
+    ## 69               31.7                 41.9 
+    ## 70               29.1                 42.4 
+    ## 71               25.7                 46.1 
+    ## 72               30.5                 39.0 
+    ## 73               27.9                 39.4 
+    ## 74               26.1                 40.0 
+    ## 75               28.2                 34.6 
+    ## 76               24.3                 38.9 
+    ## 77               23.1                 40.5 
+    ## 78               25.6                 34.9 
+    ## 79               25.1                 33.6 
+    ## 80               21.6                 31.4 
+    ## 81               20.7                 32.0 
+    ## 82               15.8                 30.5 
+    ## 83               11.7                 14.4 
+    ## 84                8.79                11.9 
+    ## 85                2.55                 3.65
 
 ## Map of mortality rates by region
 
@@ -317,7 +331,7 @@ map1 <- ggplot(df_map_mortRates, aes(x = x, y = y, fill = log(mortalityRate), la
 map1
 ```
 
-![](replicationAnalysis_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ## Relative risks by ethnic group for Russia
 
@@ -333,25 +347,26 @@ df |>
     ## # A tibble: 16 × 3
     ##    impliedEthnicity     n     perc
     ##    <chr>            <int>    <dbl>
-    ##  1 BelRusUkr         7430 0.775   
-    ##  2 BashTat            544 0.0567  
-    ##  3 CheDagIng          541 0.0564  
-    ##  4 KabAdKarBalOs      215 0.0224  
-    ##  5 Buryat             192 0.0200  
-    ##  6 KazKyr             171 0.0178  
-    ##  7 TajUzb             110 0.0115  
-    ##  8 Tuvan              104 0.0108  
-    ##  9 Jewish              82 0.00855 
-    ## 10 Armenian            70 0.00730 
-    ## 11 Azerbaijani         45 0.00469 
-    ## 12 Moldovan            41 0.00427 
-    ## 13 Kalmyk              22 0.00229 
-    ## 14 Georgian            17 0.00177 
-    ## 15 Yakut                6 0.000626
-    ## 16 INVALID              2 0.000209
+    ##  1 BelRusUkr        16455 0.812   
+    ##  2 BashTat           1049 0.0518  
+    ##  3 CheDagIng          827 0.0408  
+    ##  4 KabAdKarBalOs      342 0.0169  
+    ##  5 Buryat             317 0.0157  
+    ##  6 KazKyr             309 0.0153  
+    ##  7 Tuvan              210 0.0104  
+    ##  8 TajUzb             201 0.00992 
+    ##  9 Jewish             164 0.00810 
+    ## 10 Armenian           114 0.00563 
+    ## 11 Azerbaijani         87 0.00430 
+    ## 12 Moldovan            87 0.00430 
+    ## 13 Kalmyk              41 0.00202 
+    ## 14 Georgian            29 0.00143 
+    ## 15 Yakut               17 0.000839
+    ## 16 INVALID              4 0.000198
 
 ``` r
 # read in the data from census 2010 on ethnic proportions in the male Russian population
+# (aged 8 to 32 at the time of the 2010 census, corresponding to 20 to 44 in 2022)
 # (Note that people with missing data on ethnicity were excluded from the calculation of proportions)
 
 census2010EthnPropPopulationAll <- read_csv("census2010EthnPropPopulationAll.csv")
@@ -374,28 +389,47 @@ df_relRisk <- df |>
   # join in data from the 2010 census
   full_join(census2010EthnPropPopulationAll, by = "newEthn") |>
   mutate(relRisk = prop / propPopulation) |>
-  arrange(-relRisk)
+  mutate(relRisk_4_50 = prop / propPopulation_4_50) |>
+  mutate(relRisk_8_32 = prop / propPopulation_8_32) |>
+  arrange(-relRisk_8_32)
+
 
 df_relRisk
 ```
 
-    ## # A tibble: 6 × 8
+    ## # A tibble: 6 × 16
     ##   newEthn                    n sumKilled   prop nPopulation sumPopulation
     ##   <chr>                  <int>     <int>  <dbl>       <dbl>         <dbl>
-    ## 1 Tuvan                    104      9592 0.0108      105160      60739860
-    ## 2 Buryat                   192      9592 0.0200      210730      60739860
-    ## 3 CheDagIngKabAdKarBalOs   756      9592 0.0788     3227405      60739860
-    ## 4 BashTat                  544      9592 0.0567     2898185      60739860
-    ## 5 BelRusUkr               7430      9592 0.775     49605085      60739860
-    ## 6 other                    566      9592 0.0590     4693295      60739860
-    ##   propPopulation relRisk
-    ##            <dbl>   <dbl>
-    ## 1        0.00173   6.26 
-    ## 2        0.00347   5.77 
-    ## 3        0.0531    1.48 
-    ## 4        0.0477    1.19 
-    ## 5        0.817     0.948
-    ## 6        0.0773    0.764
+    ## 1 Tuvan                    210     20253 0.0104      105160      60739860
+    ## 2 Buryat                   317     20253 0.0157      210730      60739860
+    ## 3 BashTat                 1049     20253 0.0518     2898185      60739860
+    ## 4 BelRusUkr              16455     20253 0.812     49605085      60739860
+    ## 5 CheDagIngKabAdKarBalOs  1169     20253 0.0577     3227405      60739860
+    ## 6 other                   1053     20253 0.0520     4693295      60739860
+    ##   propPopulation nPopulation_4_50 sumPopulation_4_50 propPopulation_4_50
+    ##            <dbl>            <dbl>              <dbl>               <dbl>
+    ## 1        0.00173            81940           41185370             0.00199
+    ## 2        0.00347           155245           41185370             0.00377
+    ## 3        0.0477           1981835           41185370             0.0481 
+    ## 4        0.817           33215705           41185370             0.806  
+    ## 5        0.0531           2478900           41185370             0.0602 
+    ## 6        0.0773           3271745           41185370             0.0794 
+    ##   nPopulation_8_32 sumPopulation_8_32 propPopulation_8_32 relRisk relRisk_4_50
+    ##              <dbl>              <dbl>               <dbl>   <dbl>        <dbl>
+    ## 1            49050           22032860             0.00223   5.99         5.21 
+    ## 2            89940           22032860             0.00408   4.51         4.15 
+    ## 3          1053685           22032860             0.0478    1.09         1.08 
+    ## 4         17734430           22032860             0.805     0.995        1.01 
+    ## 5          1423855           22032860             0.0646    1.09         0.959
+    ## 6          1681900           22032860             0.0763    0.673        0.654
+    ##   relRisk_8_32
+    ##          <dbl>
+    ## 1        4.66 
+    ## 2        3.83 
+    ## 3        1.08 
+    ## 4        1.01 
+    ## 5        0.893
+    ## 6        0.681
 
 ``` r
 # calculate confidence intervals for the risk ratios with DescTools (RelRisk())
@@ -405,15 +439,14 @@ df_relRisk
 # In the second row: n ethnic group (male pop 2010) / (n all men 2010 - n ethnic group male 2010)
 
 # This function calculates relative risk with 95% CIs for an ethnic group.
-
 relRiskCI <- function(x, ethn = ethn) {
     x |>
     filter(newEthn == ethn) |>
-    select(n, sumKilled, nPopulation, sumPopulation) |>
+    select(n, sumKilled, nPopulation_8_32, sumPopulation_8_32) |>
     rename(nKilled = n) |>
     mutate(nNotKilled = sumKilled - nKilled) |>
-    mutate(nPop_minusGroup = sumPopulation - nPopulation) |>
-    select(nKilled, nNotKilled, nPopulation, nPop_minusGroup) |>
+    mutate(nPop_minusGroup_8_32 = sumPopulation_8_32 - nPopulation_8_32) |>
+    select(nKilled, nNotKilled, nPopulation_8_32, nPop_minusGroup_8_32) |>
     as.numeric() |>
     matrix(nrow = 2, byrow = TRUE) |>
     RelRisk(conf.level = 0.95) 
@@ -425,7 +458,7 @@ relRiskCI(df_relRisk, ethn = "Tuvan")
 ```
 
     ## rel. risk    lwr.ci    upr.ci 
-    ##  6.262495  5.172970  7.578462
+    ##  4.657596  4.070133  5.328843
 
 ``` r
 # Risk ratios with CIs for all ethnic groups
@@ -448,18 +481,21 @@ df_RR_results
 ```
 
     ##                     ethn           relRisk      lowRelRiskCI     highRelRiskCI
-    ## 1                  Tuvan  6.26249480120209  5.17297020144789  7.57846221370491
-    ## 2                 Buryat  5.76951727477227  5.01496463931389  6.63494555225095
-    ## 3 CheDagIngKabAdKarBalOs  1.48331348336945  1.38496269080723  1.58801260257232
-    ## 4                BashTat   1.1886046140554  1.09525657610701  1.28939258615205
-    ## 5              BelRusUkr 0.948477935000453 0.938104941066304 0.958581769848659
-    ## 6                  other 0.763665541776245 0.704888977990229 0.827012265551192
+    ## 1                  Tuvan  4.65759578639084  4.07013321687455   5.3288434056666
+    ## 2                 Buryat  3.83431590601264  3.43681084429646   4.2769885237114
+    ## 3                BashTat  1.08304425450758  1.02095271800795  1.14869436244655
+    ## 4              BelRusUkr  1.00939735964268  1.00264225491196  1.01600546818495
+    ## 5 CheDagIngKabAdKarBalOs 0.893162043533286 0.844728015121644 0.944194179479013
+    ## 6                  other 0.681098169045104 0.642133560495184 0.722290218197014
 
 ## For some ethnic republics: proportion ethnic Russian names dead vs proportion of ethnic non-Russian names dead
 
 Republics to explore: Buryatia, Tuva, North Ossetia, Dagestan, Chechnya,
 Ingushetia, Adygeya, Bashkortostan, Kalmykia, Kabardino-Balkaria,
 Tatarstan, Karachaevo-Chekessiya, Astrakhan.
+
+Risk ratios calculated with the data on male population aged 8 to 32 in
+2010 (20 to 44 in 2022).
 
 ``` r
 # Read in the 2010 census data with the data on the ethnic composition by region
@@ -468,7 +504,7 @@ census_2010_ethn <- read_csv("census_2010_ethn.csv")
 
 df_relRisk_region <- df |>
   filter(region %in% c("Buryatia", "Tuva", "North Ossetia",
-                       "Dagestan", "Astrakhan.", "Chechnya",
+                       "Dagestan", "Astrakhan", "Chechnya",
                        "Adygea", "Ingushetia", "Bashkortostan",
                        "Kalmykia", "Kabardino-Balkaria", "Tatarstan",
                        "Karachay-Cherkessia")) |>
@@ -488,45 +524,82 @@ df_relRisk_region <- df |>
   ) |>
   # join with the census data
   left_join(census_2010_ethn, by = c("region" = "regNameEng")) |>
-  select(region, nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nRusUkrBelMen) |>
+  select(region, nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nMen_ethn_nonmissing_4_50, nMen_ethn_nonmissing_8_32, nRusUkrBelMen, nRusUkrBelMen_4_50, nRusUkrBelMen_8_32) |>
   mutate(propNonRusDead = nNonEthnRusUkrBel_killed / nKilled) |>
   mutate(propNonRusAll = (nMen_ethn_nonmissing - nRusUkrBelMen) / nMen_ethn_nonmissing) |>
-  mutate(rr = propNonRusDead / propNonRusAll)
+  mutate(propNonRusAll_4_50 = (nMen_ethn_nonmissing_4_50 - nRusUkrBelMen_4_50) / nMen_ethn_nonmissing_4_50) |>
+  mutate(propNonRusAll_8_32 = (nMen_ethn_nonmissing_8_32 - nRusUkrBelMen_8_32) / nMen_ethn_nonmissing_8_32) |>
+  mutate(rr = propNonRusDead / propNonRusAll) |>
+  mutate(rr_4_50 = propNonRusDead / propNonRusAll_4_50) |>
+  mutate(rr_8_32 = propNonRusDead / propNonRusAll_8_32)
+
 
 df_relRisk_region |>
-  arrange(-rr) |>
+  arrange(-rr_8_32) |>
   print(n = Inf)
 ```
 
-    ## # A tibble: 12 × 8
+    ## # A tibble: 13 × 16
     ##    region              nKilled nNonEthnRusUkrBel_killed nMen_ethn_nonmissing
     ##    <chr>                 <int>                    <dbl>                <dbl>
-    ##  1 Buryatia                353                      154               429355
-    ##  2 Tuva                    115                      105               129555
-    ##  3 Kalmykia                 28                       21               133190
-    ##  4 Bashkortostan           297                      196              1814845
-    ##  5 Karachay-Cherkessia      28                       20               212625
-    ##  6 Chechnya                135                      134               565895
-    ##  7 Dagestan                354                      343              1348385
-    ##  8 Ingushetia               34                       33               162485
-    ##  9 Kabardino-Balkaria       67                       51               389660
-    ## 10 Tatarstan               196                       96              1643755
-    ## 11 North Ossetia           148                       95               312450
-    ## 12 Adygea                   39                        9               191695
-    ##    nRusUkrBelMen propNonRusDead propNonRusAll    rr
-    ##            <dbl>          <dbl>         <dbl> <dbl>
-    ##  1        283190          0.436         0.340 1.28 
-    ##  2         21890          0.913         0.831 1.10 
-    ##  3         39715          0.75          0.702 1.07 
-    ##  4        661380          0.660         0.636 1.04 
-    ##  5         64805          0.714         0.695 1.03 
-    ##  6          5620          0.993         0.990 1.00 
-    ##  7         40420          0.969         0.970 0.999
-    ##  8          1065          0.971         0.993 0.977
-    ##  9         82215          0.761         0.789 0.965
-    ## 10        640570          0.490         0.610 0.803
-    ## 11         59795          0.642         0.809 0.794
-    ## 12        120630          0.231         0.371 0.622
+    ##  1 Astrakhan               186                       91               397535
+    ##  2 Buryatia                643                      244               429355
+    ##  3 Tuva                    231                      208               129555
+    ##  4 Chechnya                193                      191               565895
+    ##  5 Dagestan                495                      480              1348385
+    ##  6 Bashkortostan           612                      389              1814845
+    ##  7 Ingushetia               38                       37               162485
+    ##  8 Kalmykia                 48                       33               133190
+    ##  9 Kabardino-Balkaria       89                       67               389660
+    ## 10 North Ossetia           229                      158               312450
+    ## 11 Karachay-Cherkessia      48                       28               212625
+    ## 12 Tatarstan               372                      167              1643755
+    ## 13 Adygea                   76                       18               191695
+    ##    nMen_ethn_nonmissing_4_50 nMen_ethn_nonmissing_8_32 nRusUkrBelMen
+    ##                        <dbl>                     <dbl>         <dbl>
+    ##  1                    271435                    147090        266915
+    ##  2                    303835                    170255        283190
+    ##  3                     97865                     56210         21890
+    ##  4                    434545                    265850          5620
+    ##  5                   1045985                    618990         40420
+    ##  6                   1248570                    676610        661380
+    ##  7                    125375                     75680          1065
+    ##  8                     93845                     52630         39715
+    ##  9                    282660                    160255         82215
+    ## 10                    217380                    119265         59795
+    ## 11                    149140                     82685         64805
+    ## 12                   1127830                    613920        640570
+    ## 13                    126180                     68075        120630
+    ##    nRusUkrBelMen_4_50 nRusUkrBelMen_8_32 propNonRusDead propNonRusAll
+    ##                 <dbl>              <dbl>          <dbl>         <dbl>
+    ##  1             176105              94410          0.489         0.329
+    ##  2             196010             108825          0.379         0.340
+    ##  3              14805               7760          0.900         0.831
+    ##  4               4410               2615          0.990         0.990
+    ##  5              27495              15785          0.970         0.970
+    ##  6             444260             243185          0.636         0.636
+    ##  7                780                435          0.974         0.993
+    ##  8              25475              13465          0.688         0.702
+    ##  9              53670              29080          0.753         0.789
+    ## 10              39390              21350          0.690         0.809
+    ## 11              42630              22935          0.583         0.695
+    ## 12             432990             238755          0.449         0.610
+    ## 13              77310              41130          0.237         0.371
+    ##    propNonRusAll_4_50 propNonRusAll_8_32    rr rr_4_50 rr_8_32
+    ##                 <dbl>              <dbl> <dbl>   <dbl>   <dbl>
+    ##  1              0.351              0.358 1.49    1.39    1.37 
+    ##  2              0.355              0.361 1.11    1.07    1.05 
+    ##  3              0.849              0.862 1.08    1.06    1.04 
+    ##  4              0.990              0.990 1.00    1.00    0.999
+    ##  5              0.974              0.974 1.00    0.996   0.995
+    ##  6              0.644              0.641 1.00    0.987   0.992
+    ##  7              0.994              0.994 0.980   0.980   0.979
+    ##  8              0.729              0.744 0.980   0.944   0.924
+    ##  9              0.810              0.819 0.954   0.929   0.920
+    ## 10              0.819              0.821 0.853   0.843   0.840
+    ## 11              0.714              0.723 0.839   0.817   0.807
+    ## 12              0.616              0.611 0.736   0.729   0.735
+    ## 13              0.387              0.396 0.639   0.612   0.598
 
 ``` r
 # a function to calculate relative risks by region with confidence intervals
@@ -534,10 +607,10 @@ df_relRisk_region |>
 relRiskCI_region <- function(x, regName = region) {
     x |>
     filter(region == regName) |>
-    select(nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing, nRusUkrBelMen) |>
-    mutate(nRusKilled = nKilled - nNonEthnRusUkrBel_killed) |>
-    mutate(nNonRusPop = nMen_ethn_nonmissing - nRusUkrBelMen) |>
-    select(nNonEthnRusUkrBel_killed, nRusKilled, nNonRusPop, nRusUkrBelMen) |>
+    select(nKilled, nNonEthnRusUkrBel_killed, nMen_ethn_nonmissing_8_32, nRusUkrBelMen_8_32) |>
+    mutate(nRusUkrBelKilled = nKilled - nNonEthnRusUkrBel_killed) |>
+    mutate(nNonRusPop_8_32 = nMen_ethn_nonmissing_8_32 - nRusUkrBelMen_8_32) |>
+    select(nNonEthnRusUkrBel_killed, nRusUkrBelKilled, nNonRusPop_8_32, nRusUkrBelMen_8_32) |>
     as.numeric() |>
     matrix(nrow = 2, byrow = TRUE) |>
     RelRisk(conf.level = 0.95) 
@@ -549,7 +622,7 @@ relRiskCI_region(df_relRisk_region, regName = "Tuva")
 ```
 
     ## rel. risk    lwr.ci    upr.ci 
-    ##  1.098680  1.019542  1.145762
+    ## 1.0446508 0.9918908 1.0823274
 
 ``` r
 # Risk ratios with CIs for all regions
@@ -572,22 +645,271 @@ df_RR_results_region
 ```
 
     ##                 region           relRisk      lowRelRiskCI     highRelRiskCI
-    ## 1               Adygea 0.622490785791989  0.34110672327342  1.03414578451851
-    ## 2        Bashkortostan  1.03832841760737  0.95082219268137  1.11941226813394
-    ## 3             Buryatia  1.28150158989283  1.13228177746289  1.43479245561895
-    ## 4             Chechnya  1.00254907890801 0.968430730798282  1.00871886445257
-    ## 5             Dagestan 0.998869259554687 0.974458022716939  1.01292767126584
-    ## 6           Ingushetia 0.976991880880713  0.85530337287575  1.00135926067424
-    ## 7   Kabardino-Balkaria 0.964747729420357 0.819684691025547  1.07391970633029
-    ## 8             Kalmykia  1.06865472051351 0.807095246419851  1.24431888568592
-    ## 9  Karachay-Cherkessia  1.02743201190637 0.761493164294944  1.21902943397856
-    ## 10       North Ossetia 0.793806263963197 0.694948593380386 0.883791844522273
-    ## 11           Tatarstan  0.80254837322719 0.689301985833639  0.91643991559499
-    ## 12                Tuva  1.09867968073271    1.019541815363  1.14576235158686
+    ## 1               Adygea 0.598368020626813 0.392554345972246 0.868231421631043
+    ## 2            Astrakhan  1.36604759105494  1.16794396232302  1.56549395929476
+    ## 3        Bashkortostan 0.992253486347722 0.931560344738832  1.05031409646329
+    ## 4             Buryatia   1.0517153512615 0.949855847386079   1.1576107868384
+    ## 5             Chechnya 0.999468451080621 0.972619925815124  1.00707414719138
+    ## 6             Dagestan 0.995072533007398 0.975479376635637  1.00724592046793
+    ## 7           Ingushetia 0.979313190944669 0.869484711090953  1.00110574138282
+    ## 8   Kabardino-Balkaria 0.919698147470036 0.798946381494387  1.01491146204799
+    ## 9             Kalmykia 0.923863781437508 0.734580420457729  1.07588375570629
+    ## 10 Karachay-Cherkessia 0.807245467224547 0.612769196001408 0.984667847593793
+    ## 11       North Ossetia 0.840398732792702 0.764094027993498 0.909088134870983
+    ## 12           Tatarstan  0.73462042292789 0.653173322529012  0.81778141747231
+    ## 13                Tuva  1.04465084279326 0.991890803874345  1.08232735911554
 
 The relative risk shows if ethnic minorities are more likely to die than
 ethnic Russians. If RR \> 1 ethnic minority names are more common among
 the dead, if RR \< 1 the ethnic minority names are less common.
+
+## Distribution by age
+
+``` r
+# mean age
+df |>
+  summarise(
+    mean(age, na.rm = TRUE)
+  )
+```
+
+    ## # A tibble: 1 × 1
+    ##   `mean(age, na.rm = TRUE)`
+    ##                       <dbl>
+    ## 1                      33.7
+
+``` r
+# distribution by age
+
+df |>
+  ggplot(aes(x = age)) +
+  geom_bar() +
+  xlab("Age") +
+  ylab("Number")
+```
+
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+## Number of deaths and proportion Slavic by type of military force
+
+``` r
+df |>
+  mutate(BelRusUkr = case_when(
+      impliedEthnicity == "BelRusUkr" ~ 1,
+      TRUE ~ 0
+    )) |>
+  group_by(unitType) |>
+  summarise(
+    nType = n(),
+    propSlavic = mean(BelRusUkr, na.rm = TRUE)
+    ) |>
+  mutate(propType = nType / sum(nType)) |>
+  select(unitType, nType, propType, propSlavic)
+```
+
+    ## # A tibble: 7 × 4
+    ##   unitType                      nType propType propSlavic
+    ##   <chr>                         <int>    <dbl>      <dbl>
+    ## 1 conscripted                    1856   0.0916      0.848
+    ## 2 inmates                        2949   0.146       0.859
+    ## 3 police / national guard / FSB   519   0.0256      0.628
+    ## 4 private military company       1091   0.0539      0.861
+    ## 5 professional army              6741   0.333       0.793
+    ## 6 volunteers                     2049   0.101       0.795
+    ## 7 <NA>                           5048   0.249       0.814
+
+## Deaths by month and type of military unit
+
+``` r
+unitType12Apr <- df |>
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  mutate(unitType = case_when(
+    is.na(unitType) ~ "missing data",
+    TRUE ~ unitType
+  )) |>
+  mutate(unitType = factor(unitType,
+            levels = c("inmates", "private military company", "conscripted", "volunteers",
+                       "police / national guard / FSB", "professional army", "missing data"))) |>
+  filter(!is.na(monthDeath)) |>
+  count(unitType, monthDeath) |>
+  ggplot(aes(x = monthDeath, y = n, fill = unitType)) +
+  geom_col() +
+  ylab("Number of deaths") +
+  xlab("Date of death confirmation") +
+  # theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  labs(fill = "Unit type") +
+  theme(text = element_text(size=20))
+
+unitType12Apr
+```
+
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+## Changes over time by ethnic group and region
+
+``` r
+ethnTrend12Apr <- df |>
+  mutate(newEthn = case_when(
+    impliedEthnicity == "BelRusUkr" ~ "Slavic",
+    impliedEthnicity == "BashTat" ~ "BashTat",
+    impliedEthnicity == "CheDagIng" ~ "North Caucasian",
+    impliedEthnicity == "KabAdKarBalOs" ~ "North Caucasian",
+    impliedEthnicity == "Buryat" ~ "Buryat",
+    impliedEthnicity == "Tuvan" ~ "Tuvan",
+    TRUE ~ "other"
+  )) |>
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  count(monthDeath, newEthn) |>
+  group_by(monthDeath) |>
+  mutate(propMonth = n / sum(n)) |>
+  filter(newEthn %in% c("Slavic", "Buryat", "Tuvan", "North Caucasian")) |>
+  filter(monthDeath > "Feb 2022") |>
+  ggplot(
+    aes(x = monthDeath, y = propMonth)
+  ) +
+  geom_point() +
+  geom_smooth(colour = "black", se = FALSE) +
+  xlab("Date of death confirmation") +
+  ylab("Proportion among deaths") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  facet_wrap(~ newEthn, scales="free_y") +
+  theme(text = element_text(size=20))
+
+ethnTrend12Apr 
+```
+
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+dfMacroRegionMonth <- df |>
+  mutate(macroRegion = case_when(
+      region == "Arkhangelsk" ~ "North / East",
+      region == "Nenets" ~ "North / East",
+      region == "Tyumen" ~ "North / East",
+      region == "Khanty-Mansi" ~ "North / East",
+      region == "Yamalo-Nenets" ~ "North / East",
+      region == "Altai Krai" ~ "North / East",
+      region == "Krasnodar" ~ "South",
+      region == "Krasnoyarsk" ~ "North / East",
+      region == "Primorsky" ~ "North / East",
+      region == "Stavropol" ~ "South",
+      region == "Khabarovsk" ~ "North / East",
+      region == "Amur" ~ "North / East",
+      region == "Astrakhan" ~ "South",
+      region == "Belgorod" ~ "Central",
+      region == "Bryansk" ~ "Central",
+      region == "Vladimir" ~ "Central",
+      region == "Volgograd" ~ "South",
+      region == "Vologda" ~ "Central",
+      region == "Voronezh" ~ "Central",
+      region == "Nizhny Novgorod" ~ "Volga",
+      region == "Ivanovo" ~ "Central",
+      region == "Irkutsk" ~ "North / East",
+      region == "Ingushetia" ~ "South",
+      region == "Kaliningrad" ~ "Central",
+      region == "Tver" ~ "Central",
+      region == "Kaluga" ~ "Central",
+      region == "Kamchatka" ~ "North / East",
+      region == "Kemerovo" ~ "North / East",
+      region == "Kirov" ~ "Volga",
+      region == "Kostroma" ~ "Central",
+      region == "Samara" ~ "Volga",
+      region == "Kurgan" ~ "North / East",
+      region == "Kursk" ~ "Central",
+      region == "St.Petersburg" ~ "Central",
+      region == "Leningrad" ~ "Central",
+      region == "Lipetsk" ~ "Central",
+      region == "Magadan" ~ "North / East",
+      region == "Moscow" ~ "Central",
+      region == "Moscow Oblast" ~ "Central",
+      region == "Murmansk" ~ "North / East",
+      region == "Novgorod" ~ "Central",
+      region == "Novosibirsk" ~ "North / East",
+      region == "Omsk" ~ "North / East",
+      region == "Orenburg" ~ "Volga",
+      region == "Oryol" ~ "Central",
+      region == "Penza" ~ "Volga",
+      region == "Perm" ~ "Volga",
+      region == "Pskov" ~ "Central",
+      region == "Rostov" ~ "South",
+      region == "Ryazan" ~ "Central",
+      region == "Saratov" ~ "Volga",
+      region == "Sakhalin" ~ "North / East",
+      region == "Sverdlovsk" ~ "North / East",
+      region == "Smolensk" ~ "Central",
+      region == "Tambov" ~ "Central",
+      region == "Tomsk" ~ "North / East",
+      region == "Tula" ~ "Central",
+      region == "Ulyanovsk" ~ "Volga",
+      region == "Chelyabinsk" ~ "North / East",
+      region == "Zabaykalsky" ~ "North / East",
+      region == "Chukotka" ~ "North / East",
+      region == "Yaroslavl" ~ "Central",
+      region == "Adygea" ~ "South",
+      region == "Bashkortostan" ~ "Volga",
+      region == "Buryatia" ~ "North / East",
+      region == "Dagestan" ~ "South",
+      region == "Kabardino-Balkaria" ~ "South",
+      region == "Altai Republic" ~ "North / East",
+      region == "Kalmykia" ~ "South",
+      region == "Karelia" ~ "North / East",
+      region == "Komi" ~ "North / East",
+      region == "Mari El" ~ "Volga",
+      region == "Mordovia" ~ "Volga",
+      region == "North Ossetia" ~ "South",
+      region == "Karachay-Cherkessia" ~ "South",
+      region == "Tatarstan" ~ "Volga",
+      region == "Tuva" ~ "North / East",
+      region == "Udmurtia" ~ "Volga",
+      region == "Khakassia" ~ "North / East",
+      region == "Chechnya" ~ "South",
+      region == "Chuvashia" ~ "Volga",
+      region == "Sakha" ~ "North / East",
+      region == "Yevreyskaya" ~ "North / East",
+      region == "Sevastopol" ~ "South",
+      region == "Crimea" ~ "South")
+  ) |>
+  mutate(monthDeath = as.yearmon(deathConfirmedDate)) |>
+  count(monthDeath, macroRegion) |>
+  group_by(monthDeath) |>
+  mutate(propDeaths = n / sum(n)) 
+      
+dfMacroRegionMonth 
+```
+
+    ## # A tibble: 79 × 4
+    ## # Groups:   monthDeath [16]
+    ##    monthDeath macroRegion      n propDeaths
+    ##    <yearmon>  <chr>        <int>      <dbl>
+    ##  1 Feb 2022   Central          2    0.118  
+    ##  2 Feb 2022   North / East     1    0.0588 
+    ##  3 Feb 2022   South           11    0.647  
+    ##  4 Feb 2022   Volga            3    0.176  
+    ##  5 Mar 2022   Central        240    0.176  
+    ##  6 Mar 2022   North / East   388    0.285  
+    ##  7 Mar 2022   South          456    0.335  
+    ##  8 Mar 2022   Volga          275    0.202  
+    ##  9 Mar 2022   <NA>             4    0.00293
+    ## 10 Apr 2022   Central        173    0.168  
+    ## # … with 69 more rows
+
+``` r
+regionTrend12Apr <- dfMacroRegionMonth  |>
+   filter(monthDeath > "Feb 2022") |>
+   filter(!is.na(macroRegion)) |>
+   ggplot(aes(x = monthDeath, y = propDeaths)) +
+   geom_point() +
+   geom_smooth(colour = "black", se = FALSE) +
+  xlab("Date of death confirmation") +
+  ylab("Proportion among deaths") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) +
+  facet_wrap(~ macroRegion)  +
+  theme(text = element_text(size=20))
+
+regionTrend12Apr
+```
+
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 ## Correlations with regional characteristics
 
@@ -626,7 +948,7 @@ regionData_joined |>
   ylab("Regional mortality rate")
 ```
 
-![](replicationAnalysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 # Data for percent non-ethnically Russian for Crimea and Sevastopol are not available from the 2010 census; these regions have been dropped.
@@ -641,57 +963,7 @@ regionData_joined |>
   ylab("Regional mortality rate")
 ```
 
-![](replicationAnalysis_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
-
-``` r
-# Correlation matrix
-
-regionData_joined |>
-  select(mortalityRate, percentNonRus, percBelowSubsistence, unemploymentRate, incomeToSubsitenceRatio) |>
-  as.matrix() |>
-  rcorr()
-```
-
-    ##                         mortalityRate percentNonRus percBelowSubsistence
-    ## mortalityRate                    1.00          0.24                 0.48
-    ## percentNonRus                    0.24          1.00                 0.50
-    ## percBelowSubsistence             0.48          0.50                 1.00
-    ## unemploymentRate                 0.36          0.71                 0.73
-    ## incomeToSubsitenceRatio         -0.36         -0.22                -0.82
-    ##                         unemploymentRate incomeToSubsitenceRatio
-    ## mortalityRate                       0.36                   -0.36
-    ## percentNonRus                       0.71                   -0.22
-    ## percBelowSubsistence                0.73                   -0.82
-    ## unemploymentRate                    1.00                   -0.51
-    ## incomeToSubsitenceRatio            -0.51                    1.00
-    ## 
-    ## n
-    ##                         mortalityRate percentNonRus percBelowSubsistence
-    ## mortalityRate                      85            83                   85
-    ## percentNonRus                      83            83                   83
-    ## percBelowSubsistence               85            83                   85
-    ## unemploymentRate                   85            83                   85
-    ## incomeToSubsitenceRatio            85            83                   85
-    ##                         unemploymentRate incomeToSubsitenceRatio
-    ## mortalityRate                         85                      85
-    ## percentNonRus                         83                      83
-    ## percBelowSubsistence                  85                      85
-    ## unemploymentRate                      85                      85
-    ## incomeToSubsitenceRatio               85                      85
-    ## 
-    ## P
-    ##                         mortalityRate percentNonRus percBelowSubsistence
-    ## mortalityRate                         0.0279        0.0000              
-    ## percentNonRus           0.0279                      0.0000              
-    ## percBelowSubsistence    0.0000        0.0000                            
-    ## unemploymentRate        0.0006        0.0000        0.0000              
-    ## incomeToSubsitenceRatio 0.0007        0.0465        0.0000              
-    ##                         unemploymentRate incomeToSubsitenceRatio
-    ## mortalityRate           0.0006           0.0007                 
-    ## percentNonRus           0.0000           0.0465                 
-    ## percBelowSubsistence    0.0000           0.0000                 
-    ## unemploymentRate                         0.0000                 
-    ## incomeToSubsitenceRatio 0.0000
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 ``` r
 # Regression model: mortality rate ~ percent below subsistence level + percent non-Russian
@@ -708,20 +980,20 @@ summary(m1)
     ## 
     ## Residuals:
     ##     Min      1Q  Median      3Q     Max 
-    ## -43.564  -9.506  -3.368   3.867  83.753 
+    ## -82.883 -23.328  -9.507   7.194 160.020 
     ## 
     ## Coefficients:
-    ##                       Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)           1.659139   6.192561   0.268    0.789    
-    ## percBelowSubsistence  2.065469   0.477028   4.330 4.29e-05 ***
-    ## percentNonRus        -0.004191   0.093601  -0.045    0.964    
+    ##                      Estimate Std. Error t value Pr(>|t|)  
+    ## (Intercept)          28.36623   13.85164   2.048   0.0439 *
+    ## percBelowSubsistence  2.60051    1.06703   2.437   0.0170 *
+    ## percentNonRus        -0.01555    0.20937  -0.074   0.9410  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 18.97 on 80 degrees of freedom
+    ## Residual standard error: 42.42 on 80 degrees of freedom
     ##   (2 observations deleted due to missingness)
-    ## Multiple R-squared:  0.2371, Adjusted R-squared:  0.218 
-    ## F-statistic: 12.43 on 2 and 80 DF,  p-value: 1.99e-05
+    ## Multiple R-squared:  0.08803,    Adjusted R-squared:  0.06523 
+    ## F-statistic: 3.861 on 2 and 80 DF,  p-value: 0.02508
 
 ``` r
 # Plots: mortality rate vs percent below subsistence level and percent non-ethnically Russian
@@ -752,15 +1024,112 @@ figure2 <- ggarrange(plot1, plot2)
 figure2
 ```
 
-![](replicationAnalysis_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
+
+## Validation with the Yandex data
+
+I collected data on Yandex searches by region
+(<https://wordstat.yandex.com/#!/regions>) for two search expressions:
+“сво выплаты” (“special military operation payments”, over 25,000
+monthly searches) and “выплаты погибшим” (“payments for killed”, over
+50,000 monthly searches). The data were collected on 10 February 2023.
+These are not historical data so it reflects the situation as in January
+2023.
+
+(Update: in another round of data collection, I collected Yandex data on
+19 April.)
+
+The data show regional popularity of search term, i.e. the affinity
+index which is the regional the share of searches for the
+word/expression divided over the total share of all searches in that
+region.
+
+The correlation between the Yandex searches and the fatality rate is 0.4
+or 0.5, depending on the search term.
+
+``` r
+# Reading Yandex searches data
+
+yandex_df <- read_csv("yandex_searches.csv")
+
+# Joining with the fatality rates data
+
+yandex_df <- yandex_df |>
+  left_join(table_mortRates, by = "regNameISO")
+
+# "svo vyplaty" (10 Feb)
+
+cor(yandex_df$svo_vyplaty_10Feb, yandex_df$mortalityRate)
+```
+
+    ## [1] 0.3610405
+
+``` r
+# "vyplaty pogibshim" (10 Feb)
+
+cor(yandex_df$vyplaty_pogibshim_10Feb, yandex_df$mortalityRate)
+```
+
+    ## [1] 0.5262979
+
+``` r
+# April 2023 data
+
+# vyplaty pogibshim (19 Apr)
+cor(yandex_df$vyplaty_pogibshim_19Apr, yandex_df$mortalityRate)
+```
+
+    ## [1] 0.612786
+
+``` r
+yandex_df |>
+  ggplot(aes(x = vyplaty_pogibshim_10Feb, y = mortalityRate, label = regNameISO)) +
+  geom_smooth() +
+  geom_text() +
+  xlab("vyplaty pogibshim search regional affinity index (10 Feb)") +
+  ylab("Fatality rate")
+```
+
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+``` r
+yandex_df |>
+  ggplot(aes(x = vyplaty_pogibshim_19Apr, y = mortalityRate, label = regNameISO)) +
+  geom_smooth() +
+  geom_text() +
+  xlab("vyplaty pogibshim search regional affinity index (19 Apr)") +
+  ylab("Fatality rate")
+```
+
+![](replicationAnalysis_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
+
+## Proportion of records with archived source
+
+``` r
+df |>
+  summarise(
+    sum(is.na(source))
+  )
+```
+
+    ## # A tibble: 1 × 1
+    ##   `sum(is.na(source))`
+    ##                  <int>
+    ## 1                 1355
+
+``` r
+1355 / 20253
+```
+
+    ## [1] 0.06690367
 
 ## Prepare an anonymised data set for Github
 
 ``` r
 df_anon <- df |>
-  mutate(firstName = "removed") |>
-  mutate(lastName = "removed") |>
-  select(-c(impliedEthnicity, regNameISO))
+  mutate(first_name = "removed") |>
+  mutate(last_name = "removed") |>
+  mutate(impliedEthnicity = "removed")
 
-write_csv(df_anon, "dfCasualtiesAnonymised.csv", na = "")
+write_csv(df_anon, "dfFatalitiesAnonymised.csv", na = "")
 ```
