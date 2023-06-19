@@ -12,5 +12,5 @@ The classifier used to code implied ethnicity is available here: https://github.
 
 - BessudnovFatalitiesWPApril2023.pdf: the paper.
 
-- census_2010_ethn.csv; census2010EthnPropPopulationAll.csv; census2021_nMen16-615.csv; regionCharacteristics.csv; regNames.csv; yandex_searches.csv: auxiliary data files used for replication analysis.
+- census_2010_ethn.csv; census2010EthnPropPopulationAll.csv; census2021_nMen16-615.csv; regionCharacteristics.csv; regNames.csv; yandex_searches.csv; dataPensiiMO2022.csv: auxiliary data files used for replication analysis.
 

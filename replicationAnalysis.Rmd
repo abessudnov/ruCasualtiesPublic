@@ -673,6 +673,55 @@ yandex_df |>
 
 ```
 
+## Validation with the Russian Defense Ministry pensions data (June 2023)
+
+In June 2023 the Russian Defence Ministey released statistics on the number of pensions awarded because of a death or injury of servicemen to their relatives ("po potere kormiltsa"). See https://fedstat.ru/indicator/58153 . The data contain the number of pensions by region in 2021 and 2022. The data are nor perfect and likely contain errors (for example, for Omsk region the number of pensioners in 2021 was 1709 and in 2022 415). However, most regions recorded a rapid increase in the number of pensioners. I look at the percentage increase in the number of pensioners in 2022 compared to 2021 and compare it to the fatality rates (for February to November 2022) in the BBC/Mediazona data
+
+```{r}
+
+# Fatality rates by region for death from March to November 2022
+
+table_mortRates2022 <- df |>
+  filter(!is.na(region)) |>
+  filter(deathConfirmedDate < dmy("1.12.2022")) |>
+  count(region) |>
+  # join with the census data
+  left_join(census2021, by = c("region" = "regNameEng")) |>
+  # calculate mortality rate per 100,000 men, with confidence intervals
+  mutate(mortalityRate = map2(n, nMen16_615_2021, ~ prop.test(.x, .y, conf.level=0.95) |>
+                                     broom::tidy())) |>
+  unnest(mortalityRate) |>
+  mutate(mortalityRate = estimate * 100000) |>
+  mutate(mortalityRate_lowCI = conf.low * 100000) |>
+  mutate(mortalityRate_highCI = conf.high * 100000) |>
+  arrange(-mortalityRate) |>
+  select(region, regNameISO,n, nMen16_615_2021, mortalityRate) 
+
+
+# Read the data on military pensions
+# Data source: the Russian Defence Ministry, https://fedstat.ru/indicator/58153
+  
+pensions2022 <- read_csv("dataPensiiMO2022.csv") |>
+  mutate(increase2022_to_2021 = (year2022 - year2021) / year2021 * 100)
+
+mortRate_pensions <- table_mortRates2022 |>
+  full_join(pensions2022, by = c("regNameISO" = "regionISO")) 
+
+cor(mortRate_pensions$mortalityRate, mortRate_pensions$increase2022_to_2021, use = "complete.obs")
+
+# r = 0.59
+
+mortRate_pensions |>
+  ggplot(aes(x = mortalityRate, y = log(increase2022_to_2021), label = regNameISO)) +
+  geom_text() +
+  geom_smooth(se = FALSE) +
+  stat_cor(aes(label = ..r.label..), size = 8) +
+  xlab("Fatality rate per 100,000 men (March - November 2022)") +
+  ylab("% increase in military pensions for deceased servicemen in 2022 compared to 2021 (log)")
+
+```
+
+
 ## Proportion of records with archived source
 
 ```{r}
